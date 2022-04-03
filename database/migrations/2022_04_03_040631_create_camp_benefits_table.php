@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('camp_benefits', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Camp::class)->constrained('users')->onDelete('cascade');
+            $table->foreignIdFor(Camp::class)->constrained('camps')->onDelete('cascade');
             $table->string('name');
             $table->timestamps();
         });
