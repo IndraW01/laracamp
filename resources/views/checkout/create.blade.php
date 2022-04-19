@@ -41,7 +41,7 @@
                                 </div>
                                 <div class="mb-4">
                                     <label for="email" class="form-label">Email Address</label>
-                                    <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" id="email" value="{{ auth()->user()->email }}" required>
+                                    <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" id="email" value="{{ auth()->user()->email }}" readonly>
                                     @error('email')
                                         <div class="invalid-feedback">
                                             {{ $message }}
