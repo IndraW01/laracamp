@@ -13,6 +13,7 @@
                 </div>
             </div>
             <div class="row my-5">
+                <x-alert/>
                 <table class="table">
                     <tbody>
                         @forelse ($checkouts as $checkout)
