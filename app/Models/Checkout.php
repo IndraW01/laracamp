@@ -31,4 +31,9 @@ class Checkout extends Model
     {
         return $this->belongsTo(Camp::class);
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

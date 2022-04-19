@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Mail\User\AfterRegister;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -50,5 +54,32 @@ class User extends Authenticatable
     public function checkouts()
     {
         return $this->hasMany(Checkout::class);
+    }
+
+    static public function createOrLogin()
+    {
+        $callback = Socialite::driver('google')->stateless()->user();
+
+        $data = [
+            'name' => $callback->getName(),
+            'email' => $callback->getEmail(),
+            'avatar' => $callback->getAvatar(),
+            'email_verified_at' => date('Y-m-d H:i:s', time()),
+        ];
+
+        // $user = User::firstOrCreate(['email' => $data['email']], $data);
+
+        $user = User::whereEmail($data['email'])->first();
+
+        if(!$user) {
+            // Register
+            $user = User::create($data);
+
+            Mail::to($user->email)->send(new AfterRegister($user));
+        }
+
+        Auth::login($user, true);
+
+        return redirect()->route('welcome');
     }
 }
