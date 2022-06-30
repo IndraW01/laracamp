@@ -82,4 +82,14 @@ class User extends Authenticatable
 
         return redirect()->route('welcome');
     }
+
+    // Update Table User After Checkout
+    public function userUpdateCheckout($data)
+    {
+        $this->email = $data['email'];
+        $this->name = $data['name'];
+        $this->occupation = $data['occupation'];
+
+        $this->save();
+    }
 }

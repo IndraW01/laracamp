@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\User\Checkout\Store;
-use App\Mail\Checkout\AfterCheckout;
+use Exception;
 use App\Models\Camp;
+use App\Models\User;
 use App\Models\Checkout;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use App\Mail\Checkout\AfterCheckout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Requests\User\Checkout\Store;
 
 class CheckoutController extends Controller
 {
@@ -31,9 +34,7 @@ class CheckoutController extends Controller
     public function create(Camp $camp)
     {
         if($camp->isRegistered) {
-            session()->flash('error', "You already registered on {$camp->title} camp");
-
-            return redirect()->route('user.dashboard');
+            return redirect()->route('user.dashboard')->with('error', "You already registered on {$camp->title} camp");
         }
 
         return view('checkout.create', [
@@ -54,20 +55,29 @@ class CheckoutController extends Controller
         $data['user_id'] = auth()->id();
         $data['camp_id'] = $camp->id;
 
-        // 1. update table user
-        $user = Auth()->user();
-        $user->email = $data['email'];
-        $user->name = $data['name'];
-        $user->occupation = $data['occupation'];
-        $user->save();
+        DB::beginTransaction();
 
-        // 2. Create table checkout
-        $checkout = Checkout::create($data);
+        try {
+            // 1. update table user
+            $user = User::whereId(auth()->id())->first();
+            $user->userUpdateCheckout($request->only(['email', 'name', 'occupation']));
 
-        // 3. Send email checkout
-        Mail::to(Auth::user()->email)->send(new AfterCheckout($checkout));
+            // 2. Create table checkout
+            $checkout = Checkout::create($data);
 
-        return redirect()->route('checkout.success');
+            // 3. Send email checkout
+            Mail::to(Auth::user()->email)->send(new AfterCheckout($checkout));
+
+            DB::commit();
+
+            return redirect()->route('checkout.success');
+        } catch (Exception $exception) {
+            DB::rollBack();
+
+            return redirect()->route('user.dashboard')->with('error', 'Your checkout failed');
+        }
+
+
     }
 
     /**
